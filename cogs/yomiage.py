@@ -2,6 +2,7 @@ import asyncio
 import io
 import json
 import re
+from typing import Dict, Union
 
 import aiofiles
 import discord
@@ -13,13 +14,13 @@ from voicevox_core.asyncio import Onnxruntime, OpenJtalk, Synthesizer, VoiceMode
 class YomiageCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.yomiChannel: dict[int, discord.TextChannel] = {}
-        self.queue: dict[int, asyncio.Queue] = {}
-        self.playing: dict[int, bool] = {}
-        self.speaker: dict[int, int] = {}
-        self.beforeUser: dict[int, int] = {}
+        self.yomiChannel: Dict[int, discord.TextChannel] = {}
+        self.queue: Dict[int, asyncio.Queue] = {}
+        self.playing: Dict[int, bool] = {}
+        self.speaker: Dict[int, int] = {}
+        self.beforeUser: Dict[int, int] = {}
         self.voicevox: Synthesizer = None
-        self.characters: dict[str, int] = {}
+        self.characters: Dict[str, int] = {}
 
         self.speakerCommand.autocomplete("speaker")(self.speakersAutoComplete)
 
@@ -45,7 +46,7 @@ class YomiageCog(commands.Cog):
             print(f"Loaded {i}.vvm")
 
         async with aiofiles.open("./speakers.json") as f:
-            _speaker: dict = json.loads(await f.read())
+            _speaker: Dict[int, int] = json.loads(await f.read())
             for index, value in _speaker.items():
                 self.speaker[int(index)] = value
         if not isinstance(self.speaker, dict):
@@ -149,8 +150,8 @@ class YomiageCog(commands.Cog):
     async def join(
         self,
         interaction: discord.Interaction,
-        connectTo: discord.VoiceChannel = None,
-        monitorTo: discord.abc.Messageable = None,
+        connectTo: Union[discord.VoiceChannel, discord.StageChannel] = None,
+        monitorTo: Union[discord.TextChannel, discord.VoiceChannel, discord.StageChannel] = None,
     ):
         voiceClient: discord.VoiceClient = interaction.guild.voice_client
         guild: discord.Guild = interaction.guild
