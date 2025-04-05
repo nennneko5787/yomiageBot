@@ -149,7 +149,7 @@ class YomiageCog(commands.Cog):
     async def join(
         self,
         interaction: discord.Interaction,
-        connectTo: discord.abc.Connectable = None,
+        connectTo: discord.VoiceChannel = None,
         monitorTo: discord.abc.Messageable = None,
     ):
         voiceClient: discord.VoiceClient = interaction.guild.voice_client
