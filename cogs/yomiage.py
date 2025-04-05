@@ -19,7 +19,7 @@ class YomiageCog(commands.Cog):
         self.speaker: dict[int, int] = {}
         self.beforeUser: dict[int, int] = {}
         self.voicevox: Synthesizer = None
-        self.characters: dict[str, int] = []
+        self.characters: dict[str, int] = {}
 
         self.speakerCommand.autocomplete("speaker")(self.speakersAutoComplete)
 
