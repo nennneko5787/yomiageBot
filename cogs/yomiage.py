@@ -188,14 +188,14 @@ class YomiageCog(commands.Cog):
             self.speaker[guild.id] = 1  # 1はずんだもん(ノーマル)
         await connectTo.connect()
 
-        await self.queue[guild.id].put("接続しました。")
-        await self.yomiage(guild)
-
         embed = discord.Embed(
             title="✅接続しました！",
             colour=discord.Colour.green(),
         )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+        await self.queue[guild.id].put("接続しました。")
+        await self.yomiage(guild)
 
     @app_commands.command(name="leave", description="ボイスチャンネルから切断します。")
     async def leave(self, interaction: discord.Interaction):
@@ -222,7 +222,7 @@ class YomiageCog(commands.Cog):
             title="✅切断しました！",
             colour=discord.Colour.green(),
         )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     async def speakersAutoComplete(
         self, interaction: discord.Interaction, current: str
@@ -243,7 +243,7 @@ class YomiageCog(commands.Cog):
             title="✅話者を変更しました！",
             colour=discord.Colour.green(),
         )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
 
 async def setup(bot: commands.Bot):
