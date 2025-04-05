@@ -243,7 +243,7 @@ class YomiageCog(commands.Cog):
             title="✅話者を変更しました！",
             colour=discord.Colour.green(),
         )
-        await interaction.followup.send(embed=embed, ephemeral=True)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 async def setup(bot: commands.Bot):
