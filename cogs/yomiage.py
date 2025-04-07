@@ -247,7 +247,7 @@ class YomiageCog(commands.Cog):
         if not speaker:
             embed = discord.Embed(
                 title="設定できる話者の一覧",
-                description=f"```\n{'\n'.join([name for name in self.characters.keys()])}※初期設定はずんだもん (ノーマル)です\n※Discordの制限によりオートコンプリートには25件しか表示されません\n```",
+                description=f"```\n{'\n'.join([name for name in self.characters.keys()])}\n※初期設定はずんだもん (ノーマル)です\n※Discordの制限によりオートコンプリートには25件しか表示されません\n```",
                 colour=discord.Colour.blurple(),
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
