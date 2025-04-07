@@ -3,13 +3,12 @@ import io
 import json
 import re
 from typing import Dict, Union, List
-import uuid
 
 import aiofiles
 import discord
 from discord import app_commands
 from discord.ext import commands
-from voicevox_core import UserDictWord, UserDictWordType
+from voicevox_core import UserDictWord
 from voicevox_core.asyncio import (
     Onnxruntime,
     OpenJtalk,
@@ -329,6 +328,9 @@ class YomiageCog(commands.Cog):
         name="dictionary", description="辞書関連のコマンド。"
     )
 
+    def containsNonKatakana(self, text: str):
+        return bool(re.search(r"[^\u30A0-\u30FFー]", text))
+
     @dictionaryGroup.command(name="add", description="辞書に新たな単語を追加します。")
     @discord.app_commands.rename(
         surface="単語",
@@ -362,6 +364,18 @@ class YomiageCog(commands.Cog):
         wordType: str = "COMMON_NOUN",
         priority: app_commands.Range[int, 1, 9] = 5,
     ):
+        guild = interaction.guild
+
+        if self.containsNonKatakana(pronunciation):
+            embed = discord.Embed(
+                title="発音はカタカナで入力してください", colour=discord.Colour.red()
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        if not guild.id in self.dictionary.keys():
+            self.dictionary[guild.id] = []
+
         self.dictionary[interaction.guild.id].append(
             UserDictWord(
                 surface=surface,
@@ -372,7 +386,9 @@ class YomiageCog(commands.Cog):
             )
         )
 
-        embed = discord.Embed(title=f"✅辞書に単語を追加しました！")
+        embed = discord.Embed(
+            title=f"✅辞書に単語を追加しました！", colour=discord.Colour.green()
+        )
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     async def indexAutoComplete(
@@ -395,9 +411,23 @@ class YomiageCog(commands.Cog):
     async def dictionaryRemoveCommand(
         self, interaction: discord.Interaction, index: int
     ):
+        guild = interaction.guild
+
+        if not guild.id in self.dictionary.keys():
+            self.dictionary[guild.id] = []
+
+        if len(self.dictionary[guild.id]) >= index:
+            embed = discord.Embed(
+                title="単語が存在しません。", colour=discord.Colour.red()
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
         del self.dictionary[interaction.guild.id][index]
 
-        embed = discord.Embed(title=f"✅辞書から単語を削除しました！")
+        embed = discord.Embed(
+            title=f"✅辞書から単語を削除しました！", colour=discord.Colour.green()
+        )
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
