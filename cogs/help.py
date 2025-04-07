@@ -23,6 +23,8 @@ class HelpCog(commands.Cog):
                 value="ボイスチャンネルから切断し、読み上げを終了します。",
             )
             .add_field(name="/speaker", value="話者を変更します。")
+            .add_field(name="/dictionary add", value="単語を追加します。")
+            .add_field(name="/dictionary remove", value="単語を削除します。")
         )
         await interaction.response.send_message(embed=embed)
 

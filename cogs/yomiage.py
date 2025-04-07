@@ -107,7 +107,7 @@ class YomiageCog(commands.Cog):
             return
         channel = self.yomiChannel.get(message.guild.id)
         if channel and channel.id == message.channel.id:
-            content = message.clean_content
+            content = message.clean_content.lower()
 
             if not message.guild.id in self.dictionary.keys():
                 self.dictionary[message.guild.id] = []
@@ -116,7 +116,17 @@ class YomiageCog(commands.Cog):
                 if wordDic["regex"]:
                     content = re.sub(wordDic["word"], wordDic["pronun"], content)
                 else:
-                    content = content.replace(wordDic["word"], wordDic["pronun"])
+                    content = content.replace(
+                        wordDic["word"].lower(), wordDic["pronun"].lower()
+                    )
+
+            # SNS名
+            content = (
+                content.replace("discord", "ディスコード")
+                .replace("twitter", "ツイッター")
+                .replace("tiktok", "ティックトック")
+                .replace("youtube", "ユーチューブ")
+            )
 
             if len(content) > 100:
                 content = content[0:100] + "、長文省略"
