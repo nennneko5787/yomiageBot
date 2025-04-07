@@ -56,7 +56,7 @@ class YomiageCog(commands.Cog):
             for index, value in _speaker.items():
                 self.speaker[int(index)] = value
 
-        async with aiofiles.open("./speakers.json") as f:
+        async with aiofiles.open("./dictionary.json") as f:
             _dictionary: Dict[int, List[Dict[str, Union[str, bool]]]] = json.loads(
                 await f.read()
             )
