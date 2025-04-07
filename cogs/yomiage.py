@@ -69,7 +69,7 @@ class YomiageCog(commands.Cog):
             if not isinstance(__dictionary, dict):
                 __dictionary = {}
             for index, value in __dictionary.items():
-                __dictionary[int(index)] = value
+                _dictionary[int(index)] = value
 
         for index, value in _dictionary.items():
             self.dictionary[index] = []
