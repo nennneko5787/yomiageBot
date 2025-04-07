@@ -9,26 +9,19 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from voicevox_core import UserDictWord
-from voicevox_core.asyncio import (
-    Onnxruntime,
-    OpenJtalk,
-    Synthesizer,
-    VoiceModelFile,
-    UserDict,
-)
+from voicevox_core.asyncio import Onnxruntime, OpenJtalk, Synthesizer, VoiceModelFile
 
 
 class YomiageCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.voicevox: Synthesizer = None
-        self.openJTalk: OpenJtalk = None
         self.characters: Dict[str, int] = {}
 
         self.yomiChannel: Dict[int, discord.TextChannel] = {}
         self.queue: Dict[int, asyncio.Queue] = {}
         self.speaker: Dict[int, int] = {}
-        self.dictionary: Dict[int, List[UserDictWord]] = {}
+        self.dictionary: Dict[int, List[Dict[str, Union[str, bool]]]] = {}
         self.playing: Dict[int, bool] = {}
 
         self.speakerCommand.autocomplete("speaker")(self.speakersAutoComplete)
@@ -36,12 +29,11 @@ class YomiageCog(commands.Cog):
 
     async def cog_load(self):
         openJTalkDictDir = "../voicevox_core/dict/open_jtalk_dic_utf_8-1.11"
-        self.openJTalk = await OpenJtalk.new(openJTalkDictDir)
         self.voicevox = Synthesizer(
             await Onnxruntime.load_once(
                 filename="../voicevox_core/onnxruntime/lib/libvoicevox_onnxruntime.so.1.17.3"
             ),
-            self.openJTalk,
+            await OpenJtalk.new(openJTalkDictDir),
         )
 
         for i in range(18):
@@ -60,50 +52,26 @@ class YomiageCog(commands.Cog):
             _speaker: Dict[int, int] = json.loads(await f.read())
             if not isinstance(_speaker, dict):
                 self.speaker = {}
+                _speaker = {}
             for index, value in _speaker.items():
                 self.speaker[int(index)] = value
 
-        _dictionary: Dict[int, list[Dict[str, str]]] = {}
-        async with aiofiles.open("./dictionary.json") as f:
-            __dictionary: Dict[int, list[Dict[str, str]]] = json.loads(await f.read())
-            if not isinstance(__dictionary, dict):
-                __dictionary = {}
-            for index, value in __dictionary.items():
-                _dictionary[int(index)] = value
-
-        for index, value in _dictionary.items():
-            self.dictionary[index] = []
-            for v in value:
-                self.dictionary[index].append(
-                    UserDictWord(
-                        surface=v["surface"],
-                        pronunciation=v["pronunciation"],
-                        accent_type=v["accent_type"],
-                        word_type=v["word_type"],
-                        priority=v["priority"],
-                    )
-                )
+        async with aiofiles.open("./speakers.json") as f:
+            _dictionary: Dict[int, List[Dict[str, Union[str, bool]]]] = json.loads(
+                await f.read()
+            )
+            if not isinstance(_dictionary, dict):
+                self.dictionary = {}
+                _dictionary = {}
+            for index, value in _dictionary.items():
+                self.dictionary[int(index)] = value
 
     async def cog_unload(self):
         async with aiofiles.open("./speakers.json", "w+") as f:
             await f.write(json.dumps(self.speaker))
 
-        _dictionary: Dict[int, List[Dict[str, str]]] = {}
-        for index, value in self.dictionary.items():
-            _dictionary[index] = []
-            for v in value:
-                _dictionary[index].append(
-                    {
-                        "surface": v.surface,
-                        "pronunciation": v.pronunciation,
-                        "accent_type": v.accent_type,
-                        "word_type": v.word_type,
-                        "priority": v.priority,
-                    }
-                )
-
         async with aiofiles.open("./dictionary.json", "w+") as f:
-            await f.write(json.dumps(_dictionary))
+            await f.write(json.dumps(self.dictionary))
 
     async def yomiage(self, guild: discord.Guild):
         if self.queue[guild.id].qsize() <= 0:
@@ -112,16 +80,6 @@ class YomiageCog(commands.Cog):
             return
         content = await self.queue[guild.id].get()
         self.playing[guild.id] = True
-
-        if not guild.id in self.dictionary.keys():
-            self.dictionary[guild.id] = []
-
-        # 単語をロード
-        userDict = UserDict()
-        for word in self.dictionary[guild.id]:
-            userDict.add_word(word)
-        await self.openJTalk.use_user_dict(userDict)
-        self.voicevox.open_jtalk = self.openJTalk
 
         waveBytes = await self.voicevox.tts(content, self.speaker[guild.id])
         wavIO = io.BytesIO(waveBytes)
@@ -150,6 +108,16 @@ class YomiageCog(commands.Cog):
         channel = self.yomiChannel.get(message.guild.id)
         if channel and channel.id == message.channel.id:
             content = message.clean_content
+
+            if not message.guild.id in self.dictionary.keys():
+                self.dictionary[message.guild.id] = []
+
+            for wordDic in self.dictionary[message.guild.id]:
+                if wordDic["regex"]:
+                    content = re.sub(wordDic["word"], wordDic["pronun"], content)
+                else:
+                    content.replace(wordDic["word"], wordDic["pronun"])
+
             if len(content) > 100:
                 content = content[0:100] + "、長文省略"
             content = re.sub(r"https?://\S+", "、リンク省略、", content)
@@ -329,62 +297,33 @@ class YomiageCog(commands.Cog):
         name="dictionary", description="辞書関連のコマンド。"
     )
 
-    def containsNonKatakana(self, text: str):
-        return bool(re.search(r"[^\u30A0-\u30FFー]", text))
-
     @dictionaryGroup.command(name="add", description="辞書に新たな単語を追加します。")
-    @discord.app_commands.rename(
-        surface="単語",
-        pronunciation="発音",
-        accentType="アクセントの位置",
-        wordType="品詞",
-        priority="優先度",
+    @app_commands.rename(word="単語", pronun="発音", regex="正規表現")
+    @app_commands.describe(
+        word="発音を変えたい単語。",
+        pronun="単語の発音。",
+        regex="正規表現かどうか。",
     )
-    @discord.app_commands.describe(
-        surface="発音を変えたい単語。",
-        pronunciation="カタカナのみ受け付けます。",
-        accentType="別名アクセント型。",
-        wordType="単語の品詞。",
-        priority="単語の優先度。",
-    )
-    @discord.app_commands.choices(
-        wordType=[
-            discord.app_commands.Choice(name="固有名詞", value="PROPER_NOUN"),
-            discord.app_commands.Choice(name="一般名詞", value="COMMON_NOUN"),
-            discord.app_commands.Choice(name="動詞", value="VERB"),
-            discord.app_commands.Choice(name="形容詞", value="ADJECTIVE"),
-            discord.app_commands.Choice(name="語尾", value="SUFFIX"),
+    @app_commands.choices(
+        regex=[
+            app_commands.Choice(name="はい", value=True),
+            app_commands.Choice(name="いいえ", value=False),
         ]
     )
     async def dictionaryAddCommand(
         self,
         interaction: discord.Interaction,
-        surface: str,
-        pronunciation: str,
-        accentType: int,
-        wordType: str = "COMMON_NOUN",
-        priority: app_commands.Range[int, 1, 9] = 5,
+        word: str,
+        pronun: str,
+        regex: int = False,
     ):
         guild = interaction.guild
-
-        if self.containsNonKatakana(pronunciation):
-            embed = discord.Embed(
-                title="発音はカタカナで入力してください", colour=discord.Colour.red()
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
 
         if not guild.id in self.dictionary.keys():
             self.dictionary[guild.id] = []
 
         self.dictionary[interaction.guild.id].append(
-            UserDictWord(
-                surface=surface,
-                pronunciation=pronunciation,
-                accent_type=accentType,
-                word_type=wordType,
-                priority=priority,
-            )
+            {"word": word, "pronun": pronun, "regex": regex}
         )
 
         embed = discord.Embed(
@@ -396,17 +335,16 @@ class YomiageCog(commands.Cog):
         self, interaction: discord.Interaction, current: str
     ) -> list[app_commands.Choice[int]]:
         returnList: list[app_commands.Choice[int]] = []
-        for _, value in self.dictionary.items():
-            for index, word in enumerate(value):
-                if word.surface.startswith(current):
-                    returnList.append(app_commands.Choice(name=word, value=index))
+        for index, dic in enumerate(self.dictionary[interaction.guild]):
+            if dic["word"].startswith(current):
+                returnList.append(app_commands.Choice(name=dic["word"], value=index))
         return returnList[:25]
 
     @dictionaryGroup.command(name="remove", description="辞書から単語を削除します。")
-    @discord.app_commands.rename(
+    @app_commands.rename(
         index="単語",
     )
-    @discord.app_commands.describe(
+    @app_commands.describe(
         index="辞書から削除したい単語。",
     )
     async def dictionaryRemoveCommand(
