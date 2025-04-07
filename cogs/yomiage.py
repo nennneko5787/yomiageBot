@@ -116,7 +116,7 @@ class YomiageCog(commands.Cog):
                 if wordDic["regex"]:
                     content = re.sub(wordDic["word"], wordDic["pronun"], content)
                 else:
-                    content.replace(wordDic["word"], wordDic["pronun"])
+                    content = content.replace(wordDic["word"], wordDic["pronun"])
 
             if len(content) > 100:
                 content = content[0:100] + "、長文省略"
