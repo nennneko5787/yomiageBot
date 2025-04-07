@@ -359,7 +359,7 @@ class YomiageCog(commands.Cog):
         if not guild.id in self.dictionary.keys():
             self.dictionary[guild.id] = []
 
-        if len(self.dictionary[guild.id]) >= index:
+        if len(self.dictionary[guild.id]) <= index:
             embed = discord.Embed(
                 title="単語が存在しません。", colour=discord.Colour.red()
             )
