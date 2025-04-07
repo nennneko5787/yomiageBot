@@ -335,9 +335,13 @@ class YomiageCog(commands.Cog):
         self, interaction: discord.Interaction, current: str
     ) -> list[app_commands.Choice[int]]:
         returnList: list[app_commands.Choice[int]] = []
-        for index, dic in enumerate(self.dictionary[interaction.guild]):
+        for index, dic in enumerate(self.dictionary[interaction.guild.id]):
             if dic["word"].startswith(current):
-                returnList.append(app_commands.Choice(name=dic["word"], value=index))
+                returnList.append(
+                    app_commands.Choice(
+                        name=f'{dic["word"]} (読み: {dic["pronun"]})', value=index
+                    )
+                )
         return returnList[:25]
 
     @dictionaryGroup.command(name="remove", description="辞書から単語を削除します。")
