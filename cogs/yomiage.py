@@ -254,14 +254,21 @@ class YomiageCog(commands.Cog):
         else:
             guild = interaction.guild
 
-            self.speaker[guild.id] = speaker
+            try:
+                self.speaker[guild.id] = speaker
 
-            name = [k for k, v in self.characters.items() if v == speaker]
-            embed = discord.Embed(
-                title=f"✅話者を`{name}`へ変更しました！",
-                colour=discord.Colour.green(),
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+                name = [k for k, v in self.characters.items() if v == speaker][0]
+                embed = discord.Embed(
+                    title=f"✅話者を`{name}`へ変更しました！",
+                    colour=discord.Colour.green(),
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+            except:
+                embed = discord.Embed(
+                    title=f"その話者は存在しません",
+                    colour=discord.Colour.red(),
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 async def setup(bot: commands.Bot):
