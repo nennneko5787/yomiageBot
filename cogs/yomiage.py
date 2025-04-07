@@ -375,7 +375,7 @@ class YomiageCog(commands.Cog):
         embed = discord.Embed(title=f"✅辞書に単語を追加しました！")
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    async def speakersAutoComplete(
+    async def indexAutoComplete(
         self, interaction: discord.Interaction, current: str
     ) -> list[app_commands.Choice[int]]:
         returnList: list[app_commands.Choice[int]] = []
