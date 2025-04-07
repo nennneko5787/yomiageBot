@@ -71,7 +71,7 @@ class YomiageCog(commands.Cog):
             for index, value in __dictionary.items():
                 __dictionary[int(index)] = value
 
-        for index, value in _dictionary.items():
+        for index, value in __dictionary.items():
             self.dictionary[index] = []
             for v in value:
                 _dictionary[index].append(
