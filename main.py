@@ -16,6 +16,7 @@ async def setup_hook():
     await bot.load_extension("cogs.yomiage")
     await bot.load_extension("cogs.presence")
     await bot.load_extension("cogs.help")
+    await bot.load_extension("cogs.icon")
     await bot.tree.sync()
 
 
