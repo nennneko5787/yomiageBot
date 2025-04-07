@@ -103,7 +103,7 @@ class YomiageCog(commands.Cog):
                 )
 
         async with aiofiles.open("./dictionary.json", "w+") as f:
-            await f.write(_dictionary)
+            await f.write(json.dumps(_dictionary))
 
     async def yomiage(self, guild: discord.Guild):
         if self.queue[guild.id].qsize() <= 0:
