@@ -117,6 +117,8 @@ class YomiageCog(commands.Cog):
         channel = self.yomiChannel.get(guild.id)
         if not channel:
             return
+        if member.id == guild.me.id:
+            return
 
         # どちらのチャンネルにもいない（何も変化していない）場合は無視
         if before.channel is None and after.channel is None:
@@ -151,7 +153,9 @@ class YomiageCog(commands.Cog):
         self,
         interaction: discord.Interaction,
         connectTo: Union[discord.VoiceChannel, discord.StageChannel] = None,
-        monitorTo: Union[discord.TextChannel, discord.VoiceChannel, discord.StageChannel] = None,
+        monitorTo: Union[
+            discord.TextChannel, discord.VoiceChannel, discord.StageChannel
+        ] = None,
     ):
         voiceClient: discord.VoiceClient = interaction.guild.voice_client
         guild: discord.Guild = interaction.guild
@@ -193,7 +197,7 @@ class YomiageCog(commands.Cog):
             title="✅接続しました！",
             colour=discord.Colour.green(),
         )
-        await interaction.followup.send(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed)
 
         await self.queue[guild.id].put("接続しました。")
         await self.yomiage(guild)
@@ -223,7 +227,7 @@ class YomiageCog(commands.Cog):
             title="✅切断しました！",
             colour=discord.Colour.green(),
         )
-        await interaction.followup.send(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed)
 
     async def speakersAutoComplete(
         self, interaction: discord.Interaction, current: str
@@ -235,16 +239,28 @@ class YomiageCog(commands.Cog):
         return returnList[:25]
 
     @app_commands.command(name="speaker", description="話者を変更します。")
-    async def speakerCommand(self, interaction: discord.Interaction, speaker: int = 1):
-        guild = interaction.guild
+    @app_commands.rename(speaker="話者")
+    @app_commands.describe(speaker="空欄にすると話者の一覧を表示します。")
+    async def speakerCommand(
+        self, interaction: discord.Interaction, speaker: app_commands.Choice[int] = None
+    ):
+        if not speaker:
+            embed = discord.Embed(
+                title="設定できる話者の一覧",
+                description=f"```\n{'\n'.join([name for name in self.characters.keys()])}※初期設定はずんだもん (ノーマル)です\n※Discordの制限によりオートコンプリートには25件しか表示されません\n```",
+                colour=discord.Colour.blurple(),
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+        else:
+            guild = interaction.guild
 
-        self.speaker[guild.id] = speaker
+            self.speaker[guild.id] = speaker
 
-        embed = discord.Embed(
-            title="✅話者を変更しました！",
-            colour=discord.Colour.green(),
-        )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+            embed = discord.Embed(
+                title="✅話者を変更しました！",
+                colour=discord.Colour.green(),
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 async def setup(bot: commands.Bot):

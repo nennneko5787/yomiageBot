@@ -8,7 +8,7 @@ dotenv.load_dotenv()
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot("yomiage#",help_command=None, intents=intents)
+bot = commands.Bot("yomiage#", help_command=None, intents=intents)
 
 
 @bot.event
