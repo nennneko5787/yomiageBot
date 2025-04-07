@@ -18,7 +18,6 @@ class YomiageCog(commands.Cog):
         self.queue: Dict[int, asyncio.Queue] = {}
         self.playing: Dict[int, bool] = {}
         self.speaker: Dict[int, int] = {}
-        self.beforeUser: Dict[int, int] = {}
         self.voicevox: Synthesizer = None
         self.characters: Dict[str, int] = {}
 
@@ -97,11 +96,8 @@ class YomiageCog(commands.Cog):
             content = re.sub(r"<@.*?>", "、メンション省略、", content)
             content = re.sub(r"<@&.*?>", "、ロールメンション省略、", content)
             content = re.sub(r"<.*?:.*?>", "、絵文字省略、", content)
-            if self.beforeUser[message.guild.id] != message.author.id:
-                content = f"{message.author.display_name}さん、" + content
-                self.beforeUser[message.guild.id] = message.author.id
             await self.queue[message.guild.id].put(
-                f"{content}{'、添付ファイル' if len(message.attachments) > 0 or len(message.stickers) > 0 else ''}"
+                f"{message.author.display_name}さん、{content}{'、添付ファイル' if len(message.attachments) > 0 or len(message.stickers) > 0 else ''}"
             )
             if not self.playing[message.guild.id]:
                 await self.yomiage(message.guild)
@@ -187,7 +183,6 @@ class YomiageCog(commands.Cog):
         self.yomiChannel[guild.id] = monitorTo
         self.queue[guild.id] = asyncio.Queue()
         self.playing[guild.id] = False
-        self.beforeUser[guild.id] = self.bot.user.id
 
         if not self.speaker.get(guild.id):
             self.speaker[guild.id] = 1  # 1はずんだもん(ノーマル)
@@ -220,7 +215,6 @@ class YomiageCog(commands.Cog):
         del self.yomiChannel[guild.id]
         del self.queue[guild.id]
         del self.playing[guild.id]
-        del self.beforeUser[guild.id]
         await voiceClient.disconnect()
 
         embed = discord.Embed(
