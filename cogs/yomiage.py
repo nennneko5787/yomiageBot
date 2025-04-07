@@ -242,7 +242,7 @@ class YomiageCog(commands.Cog):
     @app_commands.rename(speaker="話者")
     @app_commands.describe(speaker="空欄にすると話者の一覧を表示します。")
     async def speakerCommand(
-        self, interaction: discord.Interaction, speaker: app_commands.Choice[int] = None
+        self, interaction: discord.Interaction, speaker: int = None
     ):
         if not speaker:
             embed = discord.Embed(
@@ -256,8 +256,9 @@ class YomiageCog(commands.Cog):
 
             self.speaker[guild.id] = speaker
 
+            name = [k for k, v in self.characters.items() if v == speaker]
             embed = discord.Embed(
-                title="✅話者を変更しました！",
+                title=f"✅話者を`{name}`へ変更しました！",
                 colour=discord.Colour.green(),
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
