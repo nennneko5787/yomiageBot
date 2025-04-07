@@ -121,6 +121,7 @@ class YomiageCog(commands.Cog):
         for word in self.dictionary[guild.id]:
             userDict.add_word(word)
         await self.openJTalk.use_user_dict(userDict)
+        self.voicevox.open_jtalk = self.openJTalk
 
         waveBytes = await self.voicevox.tts(content, self.speaker[guild.id])
         wavIO = io.BytesIO(waveBytes)
